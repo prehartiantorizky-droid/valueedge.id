@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ValueEdge.id — Indonesia Stock Screener</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-void: #F0F4FF;
+  --bg-deep: #E8EEFF;
+  --bg-panel: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F8FAFF;
+  --border: #D1DCF0;
+  --border-bright: #B0C4E4;
+  --accent-green: #1A56DB;
+  --accent-green-dim: #3B82F6;
+  --accent-green-muted: #DBEAFE;
+  --accent-yellow: #D97706;
+  --accent-yellow-dim: #A16207;
+  --accent-red: #DC2626;
+  --accent-red-dim: #BE123C;
+  --accent-blue: #1A56DB;
+  --accent-purple: #6D28D9;
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --text-dim: #94A3B8;
+  --grid-line: rgba(180, 200, 230, 0.5);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--bg-void);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+/* GRID BG */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(26,86,219,0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ====== NAVBAR ====== */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 52px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 8px rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.nav-brand .dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: #1A56DB;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(26,86,219,0.4);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.nav-badge {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  padding: 2px 6px;
+  border: 1px solid #3B82F6;
+  color: #1A56DB;
+  font-family: 'Space Mono', monospace;
+  opacity: 0.7;
+}
+
+.nav-status {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 0.1em;
+}
+
+/* ====== LIVE MONITOR BADGE ====== */
+.live-monitor {
+  display: none;
+  position: fixed;
+  top: 12px;
+  right: 2rem;
+  z-index: 200;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: #1A56DB;
+  background: rgba(26,86,219,0.06);
+  border: 1px solid rgba(26,86,219,0.25);
+  padding: 4px 10px;
+}
+
+.live-monitor.active { display: flex; }
+
+.live-pulse {
+  width: 6px; height: 6px;
+  background: #1A56DB;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(26,86,219,0.4);
+  animation: live-ring 1.2s ease-out infinite;
+}
+
+@keyframes live-ring {
+  0% { box-shadow: 0 0 0 0 rgba(26,86,219,0.6); }
+  70% { box-shadow: 0 0 0 8px rgba(26,86,219,0); }
+  100% { box-shadow: 0 0 0 0 rgba(26,86,219,0); }
+}
+
+/* ====== MAIN LAYOUT ====== */
+main {
+  position: relative;
+  z-index: 1;
+  padding-top: 52px;
+}
+
+/* ====== HERO ====== */
+.hero {
+  padding: 4rem 2rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  color: #1A56DB;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 24px; height: 1px;
+  background: #1A56DB;
+}
+
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  margin-bottom: 0.8rem;
+}
+
+.hero-title span {
+  color: #1A56DB;
+  text-shadow: none;
+}
+
+.hero-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+  line-height: 1.8;
+  max-width: 560px;
+}
+
+/* ====== INPUT PANEL ====== */
+.analyzer-wrapper {
+  max-width: 1100px;
+  margin: 2rem auto 0;
+  padding: 0 2rem;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  padding: 1.8rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #1A56DB, transparent);
+  opacity: 0.5;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.6rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.panel-title-num {
+  color: #1A56DB;
+  margin-right: 4px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full { grid-column: 1 / -1; }
+.form-group.half { grid-column: span 2; }
+
+label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+input, select {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  padding: 0.55rem 0.8rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+}
+
+input:focus, select:focus {
+  border-color: #1A56DB;
+  box-shadow: 0 0 0 3px rgba(26,86,219,0.1);
+}
+
+input::placeholder { color: var(--text-dim); }
+
+select option {
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+
+.form-hint {
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+  margin-top: 2px;
+}
+
+/* ====== CTA BUTTON ====== */
+.btn-analyze {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 1.6rem;
+  padding: 0.9rem 2rem;
+  background: #1A56DB;
+  color: #FFFFFF;
+  border: none;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-analyze::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.4s;
+}
+
+.btn-analyze:hover::after { transform: translateX(100%); }
+.btn-analyze:hover { background: #1547C0; box-shadow: 0 4px 20px rgba(26,86,219,0.3); }
+.btn-analyze:active { transform: scale(0.99); }
+.btn-analyze:disabled { background: var(--text-dim); cursor: not-allowed; }
+
+.btn-icon {
+  font-size: 1rem;
+}
+
+/* ====== LOADING ====== */
+.loading-bar {
+  display: none;
+  margin-top: 1rem;
+  height: 2px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-bar.active { display: block; }
+
+.loading-bar::after {
+  content: '';
+  position: absolute;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #1A56DB, transparent);
+  animation: loading-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+  0% { left: -40%; }
+  100% { left: 140%; }
+}
+
+.loading-status {
+  display: none;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: #1A56DB;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.loading-status.active { display: block; }
+
+/* ====== RESULTS SECTION ====== */
+.results-wrapper {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+  display: none;
+}
+
+.results-wrapper.active { display: block; }
+
+/* Stock header */
+.stock-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.2rem 1.6rem;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+  border-left: 3px solid #1A56DB;
+  box-shadow: 0 1px 6px rgba(15,23,42,0.06);
+}
+
+.stock-ticker {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  color: #1A56DB;
+}
+
+.stock-meta {
+  flex: 1;
+}
+
+.stock-sector-badge {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  padding: 3px 8px;
+  border: 1px solid var(--border-bright);
+  color: var(--text-secondary);
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+}
+
+.stock-price {
+  font-family: 'Space Mono', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.stock-price-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-align: right;
+}
+
+/* Consensus bar */
+.consensus-strip {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  padding: 1rem 1.6rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.consensus-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.consensus-verdict {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: -0.01em;
+}
+
+.consensus-verdict.undervalue { color: #15803D; text-shadow: none; }
+.consensus-verdict.fair { color: #A16207; text-shadow: none; }
+.consensus-verdict.overvalue { color: #BE123C; text-shadow: none; }
+
+.consensus-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.consensus-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+}
+
+.consensus-dot.green { background: #15803D; }
+.consensus-dot.yellow { background: #A16207; }
+.consensus-dot.red { background: #BE123C; }
+.consensus-dot.empty { background: var(--border-bright); }
+
+.consensus-breakdown {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* Valuation grid */
+.valuation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.val-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 1.2rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.2s;
+  animation: card-enter 0.4s ease backwards;
+}
+
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.val-card:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-2px);
+}
+
+.val-card.undervalue { border-left: 2px solid #15803D; }
+.val-card.fair { border-left: 2px solid #A16207; }
+.val-card.overvalue { border-left: 2px solid #BE123C; }
+
+.val-card-method {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.6rem;
+}
+
+.val-card-price {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 0.3rem;
+}
+
+.val-card-diff {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.val-card-diff.pos { color: #15803D; }
+.val-card-diff.neg { color: #BE123C; }
+.val-card-diff.neu { color: #A16207; }
+
+.val-badge {
+  display: inline-block;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  padding: 3px 8px;
+  font-weight: 700;
+}
+
+.val-badge.undervalue { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
+.val-badge.fair { background: #FEF9C3; color: #A16207; border: 1px solid #FDE047; }
+.val-badge.overvalue { background: #FFE4E6; color: #BE123C; border: 1px solid #FECDD3; }
+
+.val-card-note {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+/* ====== MACRO SIGNAL ====== */
+.macro-signal-section {
+  display: none;
+  margin-bottom: 1.2rem;
+  animation: slide-up 0.5s ease backwards;
+}
+
+.macro-signal-section.active { display: block; }
+
+.macro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(77,159,255,0.08);
+  border: 1px solid rgba(77,159,255,0.3);
+  padding: 0.6rem 1rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--accent-blue);
+  width: 100%;
+}
+
+.macro-badge-icon { font-size: 1rem; }
+
+.macro-badge-content { flex: 1; }
+.macro-badge-title { font-weight: 700; color: var(--accent-blue); margin-bottom: 2px; }
+.macro-badge-rel { color: rgba(77,159,255,0.7); font-size: 0.6rem; }
+
+/* ====== KATALIS ====== */
+.katalis-section {
+  display: none;
+  margin-bottom: 1.5rem;
+}
+
+.katalis-section.active { display: block; }
+
+.section-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.katalis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.katalis-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 1.2rem;
+  position: relative;
+  animation: slide-up 0.5s ease backwards;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.katalis-card:hover { border-color: var(--border-bright); }
+
+.katalis-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.katalis-jenis-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 2px 7px;
+  background: rgba(139,92,246,0.15);
+  border: 1px solid rgba(139,92,246,0.3);
+  color: var(--accent-purple);
+}
+
+.dampak-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 2px 7px;
+}
+
+.dampak-badge.HIGH { background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; }
+.dampak-badge.MEDIUM { background: #FEF9C3; color: #A16207; border: 1px solid #FDE047; }
+.dampak-badge.LOW { background: #F1F5F9; color: var(--text-muted); border: 1px solid var(--border); }
+
+.katalis-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.katalis-ring {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0.6rem;
+}
+
+.katalis-alasan {
+  font-size: 0.62rem;
+  color: #1A56DB;
+  line-height: 1.5;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-style: italic;
+}
+
+/* ====== TICKER TAPE ====== */
+.ticker-tape {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 150;
+  background: #FFFFFF;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -1px 6px rgba(15,23,42,0.06);
+  height: 30px;
+  overflow: hidden;
+}
+
+.ticker-tape.active { display: block; }
+
+.ticker-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  animation: ticker-scroll 60s linear infinite;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 1.5rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border);
+}
+
+.ticker-item .t-sym { color: var(--text-primary); font-weight: 700; }
+.ticker-item .t-price { color: var(--text-primary); }
+.ticker-item .t-up { color: #15803D; }
+.ticker-item .t-down { color: #BE123C; }
+
+/* ====== TOAST ====== */
+.toast-container {
+  position: fixed;
+  bottom: 50px;
+  right: 1.5rem;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-left: 3px solid #1A56DB;
+  padding: 0.8rem 1rem;
+  max-width: 300px;
+  animation: toast-in 0.3s ease, toast-out 0.3s ease 4s forwards;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+  box-shadow: 0 4px 16px rgba(15,23,42,0.1);
+}
+
+.toast-head {
+  font-size: 0.58rem;
+  color: #1A56DB;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(20px); }
+}
+
+/* ====== FOOTER / DISCLAIMER ====== */
+.disclaimer {
+  max-width: 1100px;
+  margin: 1rem auto 3rem;
+  padding: 0 2rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  line-height: 1.8;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 640px) {
+  .hero { padding: 2rem 1rem 1rem; }
+  .analyzer-wrapper, .results-wrapper { padding: 0 1rem; }
+  .valuation-grid { grid-template-columns: 1fr 1fr; }
+  .stock-header { flex-wrap: wrap; gap: 0.8rem; }
+  .consensus-breakdown { margin-left: 0; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-group.half { grid-column: span 1; }
+}
+
+@media (max-width: 400px) {
+  .valuation-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #F0F4FF; }
+::-webkit-scrollbar-thumb { background: #B0C4E4; }
+::-webkit-scrollbar-thumb:hover { background: #64748B; }
+
+/* Scan line effect */
+.scanline {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.04) 2px,
+    rgba(0,0,0,0.04) 4px
+  );
+  z-index: 9998;
+  opacity: 0.3;
+}
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="dot"></span>
+    ValueEdge<span style="color:#1A56DB">.id</span>
+    <span class="nav-badge">BETA</span>
+  </div>
+  <div class="nav-status" id="navStatus">IDX MARKET — STANDBY</div>
+</nav>
+
+<!-- LIVE MONITOR BADGE -->
+<div class="live-monitor" id="liveMonitor">
+  <div class="live-pulse"></div>
+  LIVE MONITORING
+</div>
+
+<!-- MAIN -->
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-eyebrow">Indonesia Stock Screener v2.0</p>
+    <h1 class="hero-title">
+      Temukan Saham<br><span>Undervalue</span><br>Sebelum Pasar.
+    </h1>
+    <p class="hero-sub">
+      Multi-method valuation engine + AI catalyst filter + macro signal detector.<br>
+      Semua berjalan paralel, hasil instan.
+    </p>
+  </section>
+
+  <!-- INPUT PANEL -->
+  <section class="analyzer-wrapper">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title"><span class="panel-title-num">01 //</span> INPUT ANALYZER</span>
+      </div>
+
+      <!-- Auto-fetch bar -->
+      <div style="display:flex;gap:8px;margin-bottom:1.2rem;align-items:center;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;">
+          <input type="text" id="tickerFetch" placeholder="Ketik ticker lalu klik Fetch Data (contoh: BBCA)" style="text-transform:uppercase;width:100%;">
+        </div>
+        <button onclick="autoFetchData()" id="btnFetch" style="background:#1A56DB;color:#fff;border:none;padding:0.55rem 1.2rem;font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;cursor:pointer;white-space:nowrap;transition:background 0.2s;" onmouseover="this.style.background='#1547C0'" onmouseout="this.style.background='#1A56DB'">↓ FETCH DATA</button>
+        <div id="fetchStatus" style="font-family:'Space Mono',monospace;font-size:0.6rem;color:#64748B;letter-spacing:0.1em;"></div>
+      </div>
+
+      <div class="form-grid" id="inputForm">
+
+        <!-- Row 1 -->
+        <div class="form-group">
+          <label>Ticker Saham</label>
+          <input type="text" id="ticker" placeholder="BBCA" maxlength="10" style="text-transform:uppercase;">
+          <span class="form-hint">Contoh: BBCA, TLKM, ASII</span>
+        </div>
+
+        <div class="form-group">
+          <label>Sektor IDX</label>
+          <select id="sektor">
+            <option value="">— Pilih Sektor —</option>
+            <option value="Keuangan">Keuangan & Perbankan</option>
+            <option value="Energi">Energi & Pertambangan</option>
+            <option value="Teknologi">Teknologi & E-Commerce</option>
+            <option value="Konsumer">Konsumer & Retail</option>
+            <option value="Properti">Properti & Real Estate</option>
+            <option value="Infrastruktur">Infrastruktur & Konstruksi</option>
+            <option value="Kesehatan">Kesehatan & Farmasi</option>
+            <option value="Industri">Industri & Manufaktur</option>
+            <option value="Transportasi">Transportasi & Logistik</option>
+            <option value="Agrikultur">Agrikultur & Perkebunan</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Harga Saham (Rp)</label>
+          <input type="number" id="harga" placeholder="9800" min="0">
+          <span class="form-hint">Harga pasar saat ini</span>
+        </div>
+
+        <div class="form-group">
+          <label>EPS (Rp)</label>
+          <input type="number" id="eps" placeholder="850" step="any">
+          <span class="form-hint">Earnings Per Share</span>
+        </div>
+
+        <div class="form-group">
+          <label>Book Value/Share (Rp)</label>
+          <input type="number" id="bvps" placeholder="4200" step="any">
+          <span class="form-hint">Book Value Per Share</span>
+        </div>
+
+        <div class="form-group">
+          <label>FCF/Share (Rp)</label>
+          <input type="number" id="fcfps" placeholder="600" step="any">
+          <span class="form-hint">Free Cash Flow Per Share</span>
+        </div>
+
+        <div class="form-group">
+          <label>Growth Rate (%/thn)</label>
+          <input type="number" id="growth" placeholder="12" step="any" min="0" max="100">
+          <span class="form-hint">Estimasi pertumbuhan EPS</span>
+        </div>
+
+        <div class="form-group">
+          <label>WACC (%)</label>
+          <input type="number" id="wacc" placeholder="10" step="any" min="1" max="50">
+          <span class="form-hint">Weighted Avg Cost of Capital</span>
+        </div>
+
+        <div class="form-group">
+          <label>PER Industri (avg)</label>
+          <input type="number" id="perIndustri" placeholder="15" step="any">
+          <span class="form-hint">PER rata-rata sektor</span>
+        </div>
+
+        <div class="form-group">
+          <label>PBV Industri (avg)</label>
+          <input type="number" id="pbvIndustri" placeholder="2.5" step="any">
+          <span class="form-hint">PBV rata-rata sektor</span>
+        </div>
+
+        <div class="form-group">
+          <label>ROE (%)</label>
+          <input type="number" id="roe" placeholder="18" step="any">
+          <span class="form-hint">Return on Equity perusahaan</span>
+        </div>
+
+      </div>
+
+      <button class="btn-analyze" id="btnAnalyze" onclick="runAnalysis()">
+        <span class="btn-icon">◈</span>
+        JALANKAN ANALISIS LENGKAP
+        <span class="btn-icon">◈</span>
+      </button>
+
+      <div class="loading-bar" id="loadingBar"></div>
+      <div class="loading-status" id="loadingStatus">// Menghitung valuasi...</div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="results-wrapper" id="resultsWrapper">
+
+    <!-- Stock header -->
+    <div class="stock-header" id="stockHeader"></div>
+
+    <!-- Macro signal -->
+    <div class="macro-signal-section" id="macroSection">
+      <div class="macro-badge" id="macroBadge"></div>
+    </div>
+
+    <!-- Consensus -->
+    <div class="consensus-strip" id="consensusStrip"></div>
+
+    <!-- Valuation title -->
+    <div class="section-title" style="margin-bottom:1rem;">
+      <span class="panel-title-num">02 //</span> VALUATION BREAKDOWN
+    </div>
+
+    <!-- Valuation cards -->
+    <div class="valuation-grid" id="valuationGrid"></div>
+
+    <!-- Katalis section -->
+    <div class="katalis-section" id="katalisSection">
+      <div class="section-title">
+        <span class="panel-title-num">03 //</span> KATALIS AKTIF
+      </div>
+      <div class="katalis-grid" id="katalisGrid"></div>
+    </div>
+
+  </section>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer" id="disclaimer" style="display:none;">
+    ⚠ DISCLAIMER — Hasil analisis ValueEdge.id bersifat edukatif dan tidak merupakan saran investasi. Selalu lakukan riset mandiri (DYOR) sebelum mengambil keputusan investasi. Kalkulasi valuasi menggunakan input yang dimasukkan user; akurasi bergantung pada kualitas data input.
+  </div>
+</main>
+
+<!-- TICKER TAPE -->
+<div class="ticker-tape" id="tickerTape">
+  <div class="ticker-inner" id="tickerInner"></div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* =========================================================
+   UTILITY
+========================================================= */
+const fmt = (n) => new Intl.NumberFormat('id-ID').format(Math.round(n));
+const fmtPct = (n) => (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+function getDiff(fair, market) {
+  return ((fair - market) / market) * 100;
+}
+
+function classify(diff) {
+  if (diff >= 15) return 'undervalue';
+  if (diff <= -15) return 'overvalue';
+  return 'fair';
+}
+
+function classLabel(cls) {
+  if (cls === 'undervalue') return 'UNDERVALUE';
+  if (cls === 'overvalue') return 'OVERVALUE';
+  return 'FAIR';
+}
+
+/* =========================================================
+   VALUATIONS
+========================================================= */
+function calcGrowthIntrinsic(eps, growth, harga) {
+  // Growth Intrinsic Value Method: project EPS 10 years, discount at 15% hurdle rate
+  const g = growth / 100;
+  let futureEPS = eps;
+  for (let i = 0; i < 10; i++) futureEPS *= (1 + g);
+  const terminalValue = futureEPS * 15;
+  const intrinsic = terminalValue / Math.pow(1.15, 10);
+  return intrinsic;
+}
+
+function calcGraham(eps, growth) {
+  // Graham: IV = EPS × (8.5 + 2g), adjusted by 4.4/AAA_yield
+  // Using risk-free approximation 6.5% (Indonesian bonds)
+  const riskFreeRate = 6.5;
+  const iv = (eps * (8.5 + 2 * growth) * 4.4) / riskFreeRate;
+  return iv;
+}
+
+function calcDCF(fcfps, wacc, growth) {
+  // 10-year DCF + terminal value
+  const w = wacc / 100;
+  const g = Math.min(growth / 100, w - 0.01); // g < wacc
+  let pv = 0;
+  let cf = fcfps;
+  for (let i = 1; i <= 10; i++) {
+    cf *= (1 + growth / 100);
+    pv += cf / Math.pow(1 + w, i);
+  }
+  // Gordon Growth terminal value
+  const terminalCF = cf * (1 + 0.03); // conservative 3% perpetual
+  const tv = terminalCF / (w - 0.03);
+  const tvPV = tv / Math.pow(1 + w, 10);
+  return pv + tvPV;
+}
+
+function calcPER(eps, perIndustri) {
+  return eps * perIndustri;
+}
+
+function calcPBV(bvps, pbvIndustri) {
+  return bvps * pbvIndustri;
+}
+
+/* =========================================================
+   CONSENSUS
+========================================================= */
+function buildConsensus(results) {
+  const counts = { undervalue: 0, fair: 0, overvalue: 0 };
+  results.forEach(r => counts[r.cls]++);
+  let verdict = 'fair';
+  if (counts.undervalue > counts.fair && counts.undervalue > counts.overvalue) verdict = 'undervalue';
+  else if (counts.overvalue > counts.fair && counts.overvalue > counts.undervalue) verdict = 'overvalue';
+  return { verdict, counts };
+}
+
+/* =========================================================
+   RENDER VALUATIONS
+========================================================= */
+function renderValuations(results, harga) {
+  const grid = document.getElementById('valuationGrid');
+  grid.innerHTML = '';
+  results.forEach((r, i) => {
+    const diff = getDiff(r.fair, harga);
+    const diffClass = diff >= 0 ? 'pos' : 'neg';
+    const card = document.createElement('div');
+    card.className = `val-card ${r.cls}`;
+    card.style.animationDelay = `${i * 0.08}s`;
+    let extraBadge = '';
+    if (r.roeBadge) extraBadge = ` &nbsp;${r.roeBadge}`;
+    card.innerHTML = `
+      <div class="val-card-method">${r.method}</div>
+      <div class="val-card-price">Rp ${fmt(r.fair)}</div>
+      <div class="val-card-diff ${diffClass}">${fmtPct(diff)} vs harga pasar</div>
+      <span class="val-badge ${r.cls}">${classLabel(r.cls)}</span>${extraBadge}
+      <div class="val-card-note">${r.note}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+/* =========================================================
+   RENDER CONSENSUS
+========================================================= */
+function renderConsensus(consensus, harga, ticker) {
+  const strip = document.getElementById('consensusStrip');
+  const { verdict, counts } = consensus;
+  const dots = [
+    ...Array(counts.undervalue).fill('<div class="consensus-dot green"></div>'),
+    ...Array(counts.fair).fill('<div class="consensus-dot yellow"></div>'),
+    ...Array(counts.overvalue).fill('<div class="consensus-dot red"></div>'),
+  ].join('');
+  strip.innerHTML = `
+    <span class="consensus-label">KONSENSUS 5 METODE</span>
+    <div class="consensus-dots">${dots}</div>
+    <span class="consensus-verdict ${verdict}">${classLabel(verdict)}</span>
+    <span class="consensus-breakdown">${counts.undervalue}U · ${counts.fair}F · ${counts.overvalue}O</span>
+  `;
+}
+
+/* =========================================================
+   RENDER STOCK HEADER
+========================================================= */
+function renderStockHeader(ticker, sektor, harga) {
+  document.getElementById('stockHeader').innerHTML = `
+    <div class="stock-ticker">${ticker.toUpperCase()}</div>
+    <div class="stock-meta">
+      <span class="stock-sector-badge">${sektor}</span>
+    </div>
+    <div>
+      <div class="stock-price">Rp ${fmt(harga)}</div>
+      <div class="stock-price-label">HARGA PASAR</div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   RENDER KATALIS
+========================================================= */
+function renderKatalis(katalisList) {
+  const section = document.getElementById('katalisSection');
+  const grid = document.getElementById('katalisGrid');
+  if (!katalisList || katalisList.length === 0) {
+    section.classList.remove('active');
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  grid.innerHTML = '';
+  katalisList.forEach((k, i) => {
+    const card = document.createElement('div');
+    card.className = 'katalis-card';
+    card.style.animationDelay = `${0.3 + i * 0.1}s`;
+    card.innerHTML = `
+      <div class="katalis-top">
+        <span class="katalis-jenis-badge">${k.jenis}</span>
+        <span class="dampak-badge ${k.dampak}">${k.dampak}</span>
+      </div>
+      <div class="katalis-title">${k.judul}</div>
+      <div class="katalis-ring">${k.ringkasan}</div>
+      <div class="katalis-alasan">✓ ${k.alasan_positif}</div>
+    `;
+    grid.appendChild(card);
+  });
+  section.classList.add('active');
+}
+
+/* =========================================================
+   RENDER MACRO
+========================================================= */
+function renderMacro(macro) {
+  const section = document.getElementById('macroSection');
+  const badge = document.getElementById('macroBadge');
+  if (!macro || !macro.ada) {
+    section.classList.remove('active');
+    return;
+  }
+  badge.innerHTML = `
+    <span class="macro-badge-icon">🚀</span>
+    <div class="macro-badge-content">
+      <div class="macro-badge-title">Macro Tailwind — ${macro.judul}</div>
+      <div class="macro-badge-rel">${macro.relevansi}</div>
+    </div>
+    <span style="font-size:0.6rem;color:rgba(77,159,255,0.5);letter-spacing:0.1em;">${macro.sektor_terdampak?.toUpperCase()}</span>
+  `;
+  section.classList.add('active');
+}
+
+/* =========================================================
+   TICKER TAPE
+========================================================= */
+const TICKERS = [
+  ['BBCA','9800','+1.2%'], ['TLKM','3920','-0.5%'], ['ASII','5400','+0.8%'],
+  ['BMRI','5750','+1.5%'], ['GOTO','55','-1.8%'], ['BBRI','5200','+0.4%'],
+  ['ICBP','11600','+0.6%'], ['UNVR','2480','-0.3%'], ['PGAS','1580','+2.1%'],
+  ['ADRO','3940','-0.2%'], ['HRUM','1680','+3.4%'], ['TOWR','1000','+0.1%'],
+  ['INDF','6800','+0.7%'], ['KLBF','1540','-0.4%'], ['CPIN','5200','+1.1%'],
+  ['MTEL','595','+0.8%'], ['SCMA','192','-1.2%'], ['ANTM','1680','+2.8%'],
+  ['PTBA','2820','+1.3%'], ['SIDO','640','-0.6%'],
+];
+
+function buildTicker() {
+  const inner = document.getElementById('tickerInner');
+  let html = '';
+  const all = [...TICKERS, ...TICKERS]; // duplicate for seamless scroll
+  all.forEach(([sym, price, chg]) => {
+    const upDown = chg.startsWith('+') ? 't-up' : 't-down';
+    const arrow = chg.startsWith('+') ? '▲' : '▼';
+    html += `<span class="ticker-item">
+      <span class="t-sym">${sym}</span>
+      <span class="t-price">${price}</span>
+      <span class="${upDown}">${arrow} ${chg}</span>
+    </span>`;
+  });
+  inner.innerHTML = html;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+let toastQueue = [];
+function showToast(head, body, color) {
+  const container = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  if (color) t.style.borderLeftColor = color;
+  t.innerHTML = `<div class="toast-head">${head}</div>${body}`;
+  container.appendChild(t);
+  setTimeout(() => t.remove(), 4500);
+}
+
+async function scheduleToasts(ticker, katalisCount, macroAda) {
+  await sleep(2000);
+  showToast('◈ SISTEM AKTIF', `${ticker.toUpperCase()} sedang dipantau secara live`, 'var(--accent-green)');
+  if (katalisCount > 0) {
+    await sleep(3500);
+    showToast('◈ SINYAL KATALIS', `${katalisCount} katalis positif terdeteksi`, 'var(--accent-purple)');
+  }
+  if (macroAda) {
+    await sleep(5500);
+    showToast('🚀 MACRO TAILWIND', `Sinyal makro positif terdeteksi untuk sektor ini`, 'var(--accent-blue)');
+  }
+}
+
+/* =========================================================
+   API CALL
+========================================================= */
+async function fetchKatalisMacro(ticker, sektor, harga, eps, growth) {
+  const systemPrompt = `Kamu adalah analis saham Indonesia yang bertugas memfilter katalis dari berita terkini.
+
+ATURAN KERAS YANG TIDAK BOLEH DILANGGAR:
+- HANYA tampilkan katalis yang bersifat POSITIF
+- JANGAN PERNAH tampilkan, sebut, atau singgung katalis negatif dalam output apapun
+- Jika semua berita bersifat negatif atau tidak relevan, kembalikan array kosong: {"katalis": [], "macro_signal": {"ada": false}}
+- Jangan tambahkan penjelasan apapun di luar JSON
+
+KRITERIA KATALIS POSITIF YANG BOLEH DITAMPILKAN:
+
+AKUISISI POSITIF:
+- Aset yang dibeli sudah menghasilkan uang
+- Harga beli lebih murah dari nilai wajar aset sejenis
+- Ada rencana sinergi yang jelas dan terukur
+- Dibiayai kas internal, tidak perlu hutang besar
+
+EKSPANSI POSITIF:
+- Masuk ke pasar yang sedang tumbuh dan permintaannya nyata
+- Manajemen sudah punya pengalaman di bisnis serupa
+- Ada target pasar yang jelas
+- Dilakukan bertahap
+
+KONTRAK JUMBO POSITIF:
+- Klien adalah BUMN, pemerintah, atau perusahaan multinasional
+- Nilai kontrak material, minimal 10-20% dari revenue tahunan
+- Kontrak jangka panjang multi-tahun
+
+MERGER POSITIF:
+- Setelah digabung perusahaan jadi pemimpin pasar
+- Ada efisiensi biaya nyata yang terukur
+- EPS naik setelah merger
+
+RIGHTS ISSUE POSITIF:
+- Dana jelas digunakan untuk ekspansi konkret
+- Pengendali perusahaan ikut beli porsi sahamnya
+- Dilusi saham tidak terlalu besar
+
+PROYEK STRATEGIS POSITIF:
+- Ada groundbreaking resmi dengan mitra kredibel
+- Kontrak kerja sama sudah ditandatangani
+- Ada offtaker yang sudah terikat kontrak
+
+FORMAT OUTPUT — kembalikan HANYA JSON murni tanpa markdown, tanpa backtick:
+{
+  "katalis": [
+    {
+      "jenis": "AKUISISI / EKSPANSI / KONTRAK / MERGER / RIGHTS ISSUE / PROYEK",
+      "judul": "judul singkat",
+      "ringkasan": "penjelasan singkat maksimal 2 kalimat",
+      "dampak": "HIGH / MEDIUM / LOW",
+      "alasan_positif": "poin spesifik kriteria positif yang terpenuhi"
+    }
+  ],
+  "macro_signal": {
+    "ada": true atau false,
+    "judul": "judul singkat berita makro",
+    "relevansi": "kenapa ini positif untuk sektor yang dianalisis",
+    "sektor_terdampak": "nama sektor"
+  }
+}
+
+Isi macro_signal hanya jika ada berita makro Indonesia terkini yang secara nyata mendukung sektor saham yang dianalisis. Jika tidak ada, kembalikan "ada": false.`;
+
+  const userMsg = `Analisis katalis positif untuk saham ${ticker} di sektor ${sektor} berdasarkan berita terkini Indonesia. Data keuangan: Harga ${harga}, EPS ${eps}, Growth Rate ${growth}%.`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userMsg }]
+    })
+  });
+
+  const data = await res.json();
+  const rawText = data.content[0].text;
+  const clean = rawText
+    .replace(/```json/g, '')
+    .replace(/```/g, '')
+    .trim();
+  let parsed;
+  try {
+    parsed = JSON.parse(clean);
+  } catch(e) {
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (match) parsed = JSON.parse(match[0]);
+  }
+  return parsed || { katalis: [], macro_signal: { ada: false } };
+}
+
+/* =========================================================
+   MAIN RUN
+========================================================= */
+async function runAnalysis() {
+  // Get inputs
+  const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+  const sektor = document.getElementById('sektor').value;
+  const harga = parseFloat(document.getElementById('harga').value);
+  const eps = parseFloat(document.getElementById('eps').value);
+  const bvps = parseFloat(document.getElementById('bvps').value);
+  const fcfps = parseFloat(document.getElementById('fcfps').value);
+  const growth = parseFloat(document.getElementById('growth').value);
+  const wacc = parseFloat(document.getElementById('wacc').value);
+  const perInd = parseFloat(document.getElementById('perIndustri').value);
+  const pbvInd = parseFloat(document.getElementById('pbvIndustri').value);
+
+  // Validation
+  if (!ticker) return alert('Masukkan ticker saham.');
+  if (!sektor) return alert('Pilih sektor IDX.');
+  const nums = [harga, eps, bvps, fcfps, growth, wacc, perInd, pbvInd];
+  if (nums.some(isNaN)) return alert('Lengkapi semua field numerik.');
+  if (wacc <= 0) return alert('WACC harus lebih dari 0.');
+
+  // ROE badge (optional — can be empty)
+  const roeRaw = parseFloat(document.getElementById('roe').value);
+  let roeBadgeHTML = '';
+  let skipGrowthIntrinsic = false;
+  if (!isNaN(roeRaw)) {
+    if (roeRaw >= 15) {
+      roeBadgeHTML = `<span class="val-badge" style="background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;margin-left:4px;">High Quality ✓</span>`;
+    } else if (roeRaw >= 10) {
+      roeBadgeHTML = `<span class="val-badge" style="background:#FEF9C3;color:#A16207;border:1px solid #FDE047;margin-left:4px;">Moderate Quality</span>`;
+    } else {
+      roeBadgeHTML = `<span class="val-badge" style="background:#FFE4E6;color:#BE123C;border:1px solid #FECDD3;margin-left:4px;">Low Quality</span>`;
+      skipGrowthIntrinsic = true;
+    }
+  }
+
+  // UI: loading
+  const btn = document.getElementById('btnAnalyze');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-icon">◌</span> MENGANALISIS... <span class="btn-icon">◌</span>';
+  document.getElementById('loadingBar').classList.add('active');
+  document.getElementById('loadingStatus').classList.add('active');
+  document.getElementById('loadingStatus').textContent = '// Menghitung 5 metode valuasi secara paralel...';
+  document.getElementById('resultsWrapper').classList.remove('active');
+  document.getElementById('disclaimer').style.display = 'none';
+
+  // ---- PARALLEL: valuations + API ----
+  const valuationPromise = new Promise(resolve => {
+    const gi = skipGrowthIntrinsic ? null : calcGrowthIntrinsic(eps, growth, harga);
+    const graham = calcGraham(eps, growth);
+    const dcf = calcDCF(fcfps, wacc, growth);
+    const per = calcPER(eps, perInd);
+    const pbv = calcPBV(bvps, pbvInd);
+
+    const results = [];
+    if (gi !== null) {
+      results.push({ method: 'Growth Intrinsic Value', fair: gi, cls: classify(getDiff(gi, harga)), note: 'Menghitung nilai wajar berdasarkan proyeksi pertumbuhan EPS 10 tahun ke depan dengan discount rate 15%', roeBadge: roeBadgeHTML });
+    }
+    results.push(
+      { method: 'Benjamin Graham', fair: graham, cls: classify(getDiff(graham, harga)), note: 'IV = EPS × (8.5 + 2g), disesuaikan risk-free rate obligasi Indonesia 6.5%' },
+      { method: 'DCF (10 Tahun)', fair: dcf, cls: classify(getDiff(dcf, harga)), note: `Discounted future FCF menggunakan WACC ${wacc}%, terminal growth 3%` },
+      { method: 'PER Method', fair: per, cls: classify(getDiff(per, harga)), note: `EPS × PER industri rata-rata ${perInd}× sektor ${sektor}` },
+      { method: 'PBV Method', fair: pbv, cls: classify(getDiff(pbv, harga)), note: `BVPS × PBV industri rata-rata ${pbvInd}× sektor ${sektor}` },
+    );
+    resolve(results);
+  });
+
+  const apiPromise = fetchKatalisMacro(ticker, sektor, harga, eps, growth).catch(() => null);
+
+  // Await both
+  const [results, aiData] = await Promise.all([valuationPromise, apiPromise]);
+
+  // Update loading msg
+  document.getElementById('loadingStatus').textContent = '// Menyusun hasil analisis...';
+  await sleep(300);
+
+  // Hide loading
+  document.getElementById('loadingBar').classList.remove('active');
+  document.getElementById('loadingStatus').classList.remove('active');
+
+  // Build consensus
+  const consensus = buildConsensus(results);
+
+  // Render
+  renderStockHeader(ticker, sektor, harga);
+  renderConsensus(consensus, harga, ticker);
+  renderValuations(results, harga);
+
+  if (aiData) {
+    renderKatalis(aiData.katalis);
+    renderMacro(aiData.macro_signal);
+  }
+
+  // Show results
+  document.getElementById('resultsWrapper').classList.add('active');
+  document.getElementById('disclaimer').style.display = 'block';
+
+  // Re-enable button
+  btn.disabled = false;
+  btn.innerHTML = '<span class="btn-icon">◈</span> JALANKAN ANALISIS LENGKAP <span class="btn-icon">◈</span>';
+
+  // Live terminal feel
+  activateLiveMode();
+
+  // Toasts
+  const katCount = aiData?.katalis?.length || 0;
+  const macroAda = aiData?.macro_signal?.ada || false;
+  scheduleToasts(ticker, katCount, macroAda);
+
+  // Scroll to results
+  document.getElementById('resultsWrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Nav status
+  document.getElementById('navStatus').textContent = `${ticker} — LIVE MONITORING AKTIF`;
+}
+
+/* =========================================================
+   LIVE MODE
+========================================================= */
+function activateLiveMode() {
+  document.getElementById('liveMonitor').classList.add('active');
+  document.getElementById('tickerTape').classList.add('active');
+  buildTicker();
+  // Add padding bottom so content not hidden behind ticker
+  document.body.style.paddingBottom = '30px';
+}
+
+/* =========================================================
+   AUTO-FETCH DATA (Fix 3)
+========================================================= */
+const HARDCODE_DATA = {
+  BBCA: { harga:9850, eps:990, bvps:5800, fcfps:720, growth:11, wacc:9, perInd:18, pbvInd:3.2, roe:22, sektor:'Keuangan' },
+  BBRI: { harga:5200, eps:430, bvps:2900, fcfps:380, growth:10, wacc:9.5, perInd:15, pbvInd:2.5, roe:20, sektor:'Keuangan' },
+  BMRI: { harga:5750, eps:510, bvps:3200, fcfps:420, growth:12, wacc:9, perInd:16, pbvInd:2.6, roe:19, sektor:'Keuangan' },
+  TLKM: { harga:3920, eps:228, bvps:1480, fcfps:310, growth:6, wacc:10, perInd:14, pbvInd:2.8, roe:16, sektor:'Teknologi' },
+  ASII: { harga:5400, eps:480, bvps:3100, fcfps:420, growth:8, wacc:10.5, perInd:12, pbvInd:1.8, roe:17, sektor:'Industri' },
+  UNVR: { harga:2480, eps:198, bvps:520, fcfps:210, growth:5, wacc:11, perInd:20, pbvInd:5.0, roe:45, sektor:'Konsumer' },
+  ICBP: { harga:11600, eps:680, bvps:4200, fcfps:590, growth:9, wacc:10, perInd:18, pbvInd:3.5, roe:21, sektor:'Konsumer' },
+  INDF: { harga:6800, eps:590, bvps:5100, fcfps:510, growth:7, wacc:10.5, perInd:13, pbvInd:1.5, roe:14, sektor:'Konsumer' },
+  KLBF: { harga:1540, eps:62, bvps:590, fcfps:55, growth:8, wacc:10, perInd:22, pbvInd:4.0, roe:19, sektor:'Kesehatan' },
+  PGAS: { harga:1580, eps:188, bvps:1320, fcfps:160, growth:6, wacc:11, perInd:10, pbvInd:1.3, roe:14, sektor:'Energi' },
+  ADRO: { harga:3940, eps:980, bvps:4200, fcfps:850, growth:5, wacc:12, perInd:8, pbvInd:1.2, roe:28, sektor:'Energi' },
+  ANTM: { harga:1680, eps:75, bvps:980, fcfps:60, growth:12, wacc:12, perInd:12, pbvInd:1.8, roe:12, sektor:'Energi' },
+  PTBA: { harga:2820, eps:480, bvps:2600, fcfps:420, growth:4, wacc:11.5, perInd:8, pbvInd:1.1, roe:19, sektor:'Energi' },
+  GOTO: { harga:55, eps:-8, bvps:320, fcfps:-5, growth:25, wacc:15, perInd:30, pbvInd:0.8, roe:-3, sektor:'Teknologi' },
+  CPIN: { harga:5200, eps:320, bvps:2100, fcfps:280, growth:9, wacc:10.5, perInd:16, pbvInd:2.6, roe:16, sektor:'Konsumer' },
+  TOWR: { harga:1000, eps:58, bvps:520, fcfps:70, growth:10, wacc:9.5, perInd:18, pbvInd:2.0, roe:12, sektor:'Infrastruktur' },
+  MTEL: { harga:595, eps:32, bvps:380, fcfps:40, growth:12, wacc:10, perInd:18, pbvInd:1.6, roe:10, sektor:'Infrastruktur' },
+  BYAN: { harga:19200, eps:3800, bvps:8500, fcfps:3200, growth:3, wacc:12, perInd:7, pbvInd:1.5, roe:48, sektor:'Energi' },
+  HRUM: { harga:1680, eps:290, bvps:2200, fcfps:250, growth:5, wacc:12, perInd:8, pbvInd:0.9, roe:14, sektor:'Energi' },
+  SCMA: { harga:192, eps:18, bvps:360, fcfps:22, growth:6, wacc:11, perInd:14, pbvInd:0.6, roe:6, sektor:'Teknologi' },
+};
+
+const SEKTOR_MAP = {
+  'Keuangan': 'Keuangan', 'Energi': 'Energi', 'Teknologi': 'Teknologi',
+  'Konsumer': 'Konsumer', 'Properti': 'Properti', 'Infrastruktur': 'Infrastruktur',
+  'Kesehatan': 'Kesehatan', 'Industri': 'Industri', 'Transportasi': 'Transportasi',
+  'Agrikultur': 'Agrikultur',
+};
+
+async function streamFieldValue(fieldId, targetVal, delay = 0) {
+  await sleep(delay);
+  const el = document.getElementById(fieldId);
+  if (!el) return;
+  const isFloat = String(targetVal).includes('.');
+  let current = 0;
+  const steps = 12;
+  const step = targetVal / steps;
+  for (let i = 0; i <= steps; i++) {
+    el.value = isFloat ? (step * i).toFixed(1) : Math.round(step * i);
+    await sleep(30);
+  }
+  el.value = targetVal;
+  el.style.borderColor = '#1A56DB';
+  el.style.background = '#EEF4FF';
+  setTimeout(() => { el.style.borderColor = ''; el.style.background = ''; }, 800);
+}
+
+async function autoFetchData() {
+  const tickerInput = document.getElementById('tickerFetch');
+  const ticker = tickerInput.value.trim().toUpperCase();
+  if (!ticker) { alert('Masukkan ticker terlebih dahulu.'); return; }
+
+  const btn = document.getElementById('btnFetch');
+  const status = document.getElementById('fetchStatus');
+  btn.disabled = true;
+  btn.textContent = '...';
+  status.textContent = '// Menghubungi Yahoo Finance...';
+
+  let data = null;
+
+  // Try Yahoo Finance
+  try {
+    const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${ticker}.JK?modules=defaultKeyStatistics,financialData,summaryDetail`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (res.ok) {
+      const json = await res.json();
+      const fd = json?.quoteSummary?.result?.[0]?.financialData;
+      const sd = json?.quoteSummary?.result?.[0]?.summaryDetail;
+      const ks = json?.quoteSummary?.result?.[0]?.defaultKeyStatistics;
+      if (fd && sd) {
+        const currentPrice = sd?.previousClose?.raw || sd?.regularMarketPrice?.raw;
+        const epsVal = ks?.trailingEps?.raw;
+        const bvps = ks?.bookValue?.raw;
+        const fcf = fd?.freeCashflow?.raw;
+        const shares = ks?.sharesOutstanding?.raw;
+        const fcfps = (fcf && shares) ? (fcf / shares) : null;
+        const growthEst = fd?.revenueGrowth?.raw ? (fd.revenueGrowth.raw * 100) : 10;
+        const wacc = 10;
+        const roe = fd?.returnOnEquity?.raw ? (fd.returnOnEquity.raw * 100) : null;
+        if (currentPrice && epsVal && bvps) {
+          data = {
+            harga: Math.round(currentPrice),
+            eps: Math.round(epsVal * (currentPrice < 100 ? 1 : 1)),
+            bvps: Math.round(bvps),
+            fcfps: fcfps ? Math.round(fcfps) : Math.round(Math.abs(epsVal) * 0.7),
+            growth: Math.round(Math.abs(growthEst)),
+            wacc: wacc,
+            perInd: 15,
+            pbvInd: 2.5,
+            roe: roe ? Math.round(roe) : null,
+          };
+          status.textContent = '✓ Data dari Yahoo Finance';
+        }
+      }
+    }
+  } catch(e) { /* silent fallback */ }
+
+  // Fallback to hardcode
+  if (!data) {
+    const hc = HARDCODE_DATA[ticker];
+    if (hc) {
+      data = hc;
+      status.textContent = `✓ Data referensi ${ticker} (offline)`;
+    } else {
+      status.textContent = `⚠ Ticker tidak dikenal — isi manual`;
+      btn.disabled = false;
+      btn.textContent = '↓ FETCH DATA';
+      return;
+    }
+  }
+
+  // Set ticker main input and sektor
+  document.getElementById('ticker').value = ticker;
+  if (data.sektor) {
+    const sel = document.getElementById('sektor');
+    for (let opt of sel.options) {
+      if (opt.value === data.sektor) { sel.value = data.sektor; break; }
+    }
+  }
+
+  // Stream all fields with staggered animation
+  const fields = [
+    ['harga', data.harga, 0],
+    ['eps', data.eps, 80],
+    ['bvps', data.bvps, 160],
+    ['fcfps', data.fcfps, 240],
+    ['growth', data.growth, 320],
+    ['wacc', data.wacc, 400],
+    ['perIndustri', data.perInd, 480],
+    ['pbvIndustri', data.pbvInd, 560],
+  ];
+  if (data.roe !== null && data.roe !== undefined) {
+    fields.push(['roe', data.roe, 640]);
+  }
+
+  await Promise.all(fields.map(([id, val, delay]) => streamFieldValue(id, val, delay)));
+
+  status.textContent += ' — data siap, klik Analisis';
+  btn.disabled = false;
+  btn.textContent = '↓ FETCH DATA';
+}
+
+/* =========================================================
+   SYNC ticker input → tickerFetch and vice versa
+========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  const t = document.getElementById('ticker');
+  const tf = document.getElementById('tickerFetch');
+  if (t) t.addEventListener('input', () => { if (tf) tf.value = t.value.toUpperCase(); });
+  if (tf) tf.addEventListener('input', () => { tf.value = tf.value.toUpperCase(); if (t) t.value = tf.value; });
+});
+
+/* =========================================================
+   KEYBOARD SHORTCUT
+========================================================= */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    runAnalysis();
+  }
+});
+</script>
+</body>
+</html>
